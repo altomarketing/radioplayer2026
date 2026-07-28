@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Gerador do content.js — Minha Rádio</title>
+    <!-- carrega o conteúdo atual: pré-preenche o formulário e, no pré-boot
+         abaixo, define o estilo visual da própria página do gerador -->
+    <script src="content.js"></script>
+    <script>
+        (function () {
+            var theme = localStorage.getItem("site:theme");
+            if (!theme) theme = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+            document.documentElement.dataset.theme = theme;
+
+            var content = window.siteContent || {};
+            document.documentElement.dataset.ui = (content.theme || {}).style || "glass";
+        })();
+    </script>
+    <link rel="stylesheet" href="site.css">
+    <link rel="stylesheet" href="css/ui-styles.css">
+    <style>
+        .gen-section {
+            margin-top: 40px;
+            padding: 24px;
+            border-radius: var(--site-radius);
+            background: var(--site-surface);
+            border: 1px solid var(--site-border);
+        }
+
+        .gen-section h2 { margin: 0 0 6px; font-size: 20px; }
+        .gen-hint { margin: 0 0 18px; font-size: 13px; color: var(--site-muted); }
+
+        .gen-item {
+            position: relative;
+            display: grid;
+            gap: 10px;
+            padding: 16px;
+            margin-bottom: 14px;
+            border-radius: 14px;
+            border: 1px solid var(--site-border);
+            background: var(--site-surface);
+        }
+
+        .gen-field { display: grid; gap: 4px; }
+        .gen-field label { font-size: 11.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--site-muted); }
+
+        .gen-field input,
+        .gen-field select,
+        .gen-field textarea {
+            font-family: inherit;
+            font-size: 14px;
+            color: var(--site-text);
+            background: var(--site-bg);
+            border: 1px solid var(--site-border);
+            border-radius: 10px;
+            padding: 10px 12px;
+        }
+
+        .gen-field textarea { min-height: 80px; resize: vertical; }
+        .gen-field input:focus, .gen-field select:focus, .gen-field textarea:focus { outline: 2px solid var(--site-accent); outline-offset: 1px; }
+
+        .gen-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        @media (max-width: 640px) { .gen-row { grid-template-columns: 1fr; } }
+
+        .gen-field input[type="color"] {
+            height: 46px;
+            padding: 4px;
+            cursor: pointer;
+        }
+
+        .gen-check {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13.5px;
+            color: var(--site-muted);
+            cursor: pointer;
+        }
+
+        .gen-check input { width: 18px; height: 18px; accent-color: var(--site-accent); cursor: pointer; }
+
+        /* prévia da cor escolhida */
+        .gen-swatches { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+
+        .gen-swatch {
+            padding: 11px 20px;
+            border-radius: 999px;
+            font-size: 13px;
+            font-weight: 800;
+            color: var(--site-accent-ink);
+            background: linear-gradient(135deg, var(--site-accent), var(--site-accent-2, #2ba7b0));
+        }
+
+        .gen-swatch-alt {
+            padding: 10px 18px;
+            border-radius: 999px;
+            border: 1px solid var(--site-accent);
+            color: var(--site-accent);
+            font-size: 13px;
+            font-weight: 800;
+            background: none;
+        }
+
+        .gen-remove {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 30px;
+            height: 30px;
+            border: none;
+            border-radius: 50%;
+            background: rgba(255, 90, 95, 0.15);
+            color: #ff5a5f;
+            font-weight: 800;
+            cursor: pointer;
+        }
+
+        .gen-add {
+            padding: 10px 18px;
+            border-radius: 999px;
+            border: 1px dashed var(--site-border);
+            background: none;
+            color: var(--site-accent);
+            font-family: inherit;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .gen-add:hover { background: var(--site-surface-strong); }
+
+        /* ordem das seções: lista com setas ↑/↓ */
+        .gen-order { display: grid; gap: 8px; }
+
+        .gen-order-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border: 1px solid var(--site-border);
+            border-radius: 12px;
+            background: var(--site-surface);
+        }
+
+        .gen-order-pos {
+            width: 24px;
+            font-weight: 800;
+            font-size: 13px;
+            color: var(--site-accent);
+        }
+
+        .gen-order-name { flex: 1; font-weight: 700; font-size: 14px; }
+
+        .gen-order-move {
+            width: 30px;
+            height: 30px;
+            border: 1px solid var(--site-border);
+            border-radius: 50%;
+            background: none;
+            color: var(--site-text);
+            font-size: 15px;
+            line-height: 1;
+            cursor: pointer;
+        }
+
+        .gen-order-move:hover:not(:disabled) { background: var(--site-surface-strong); }
+        .gen-order-move:disabled { opacity: 0.3; cursor: default; }
+
+        .gen-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+
+        .gen-output textarea {
+            width: 100%;
+            min-height: 260px;
+            font-family: Consolas, monospace;
+            font-size: 12.5px;
+            color: var(--site-text);
+            background: var(--site-bg);
+            border: 1px solid var(--site-border);
+            border-radius: 14px;
+            padding: 14px;
+        }
+
+        .gen-actions { display: flex; gap: 12px; flex-wrap: wrap; margin: 18px 0; }
+
+        .gen-primary {
+            padding: 14px 28px;
+            border: none;
+            border-radius: 999px;
+            background: linear-gradient(135deg, var(--site-accent), #2ba7b0);
+            color: var(--site-accent-ink);
+            font-family: inherit;
+            font-size: 15px;
+            font-weight: 800;
+            cursor: pointer;
+        }
+
+        .gen-secondary {
+            padding: 14px 24px;
+            border: 1px solid var(--site-border);
+            border-radius: 999px;
+            background: var(--site-surface);
+            color: var(--site-text);
+            font-family: inherit;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .gen-secondary:hover { background: var(--site-surface-strong); }
+
+        /* --- seletor de estilo visual ---
+           A moldura do cartão usa os tokens da PÁGINA (o estilo escolhido);
+           só o miolo .style-preview carrega o data-ui do estilo que ele
+           representa — por isso as cinco miniaturas convivem lado a lado. */
+
+        .style-picker {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 14px;
+        }
+
+        .style-option {
+            padding: 0;
+            text-align: left;
+            border: 2px solid var(--site-border);
+            border-radius: 16px;
+            background: var(--site-surface);
+            color: var(--site-text);
+            font-family: inherit;
+            cursor: pointer;
+            overflow: hidden;
+            transition: border-color 0.2s ease, transform 0.15s ease;
+        }
+
+        .style-option:hover { transform: translateY(-2px); }
+
+        .style-option.is-active { border-color: var(--site-accent); }
+
+        .style-option-body { padding: 12px 14px 14px; }
+
+        .style-option-name {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            font-size: 14px;
+            font-weight: 800;
+        }
+
+        /* marca de selecionado: círculo com o accent (não conto só com a
+           borda — quem enxerga mal a diferença de 2px fica sem resposta) */
+        .style-option-check {
+            flex: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            border: 2px solid var(--site-border);
+        }
+
+        .style-option.is-active .style-option-check {
+            border-color: var(--site-accent);
+            background: radial-gradient(circle, var(--site-accent) 45%, transparent 47%);
+        }
+
+        .style-option-desc {
+            margin-top: 5px;
+            font-size: 12px;
+            line-height: 1.55;
+            color: var(--site-muted);
+        }
+    </style>
+</head>
+
+<body>
+    <header class="site-header">
+        <div class="site-header-inner">
+            <a class="site-brand" href="index.html"><span class="site-brand-dot"></span> Minha Rádio</a>
+            <span style="font-size:13px;color:var(--site-muted);font-weight:700">Gerador do content.js</span>
+            <button type="button" id="theme-toggle" class="theme-toggle" aria-label="Alternar tema claro/escuro"></button>
+        </div>
+    </header>
+
+    <div class="site-container" style="padding-bottom:64px">
+
+        <section class="hero" style="padding:48px 0 8px">
+            <h1 style="font-size:clamp(26px,4vw,38px)">Configure o conteúdo do site</h1>
+            <p>Preencha os campos abaixo (já carregados com o conteúdo atual) e clique em <strong>Gerar content.js</strong>.
+               Depois é só baixar o arquivo e substituir o <code>content.js</code> na raiz do site.</p>
+        </section>
+
+        <section class="gen-section">
+            <h2>Estilo visual</h2>
+            <p class="gen-hint">Troca a linguagem do site <strong>e do player</strong> de uma vez: cantos, sombras,
+               transparência e relevo. Esta página do gerador se repinta com o estilo escolhido — o que você vê
+               aqui é o que o site vai ser.</p>
+            <div class="style-picker" id="gen-style"></div>
+            <div id="gen-hover-zoom"></div>
+        </section>
+
+        <section class="gen-section">
+            <h2>Efeitos do player</h2>
+            <p class="gen-hint">Os dois enfeites do dock. Desligar não muda o áudio nem os controles — só tira o
+               movimento, o que ajuda em máquina fraca. Quem embute o player em outro site pode dizer o mesmo
+               direto no <code>config.js</code> (<code>visualizer</code> e <code>progress</code>), que tem a
+               palavra final sobre o que for gerado aqui.</p>
+            <div id="gen-player-fx"></div>
+        </section>
+
+        <section class="gen-section">
+            <h2>Cor do site</h2>
+            <p class="gen-hint">A cor de destaque manda nos botões, links, selos e no degradê. O site deriva sozinho o
+               brilho do fundo e a cor do texto sobre ela — a prévia abaixo já muda enquanto você escolhe.</p>
+            <div class="gen-item" id="gen-theme"></div>
+        </section>
+
+        <section class="gen-section">
+            <h2>Ordem das seções</h2>
+            <p class="gen-hint">Define a ordem em que as seções aparecem na home e no menu — suba o que a sua rádio tem de
+               mais forte. Os slides do topo e o rodapé ficam sempre nas pontas. Seção sem conteúdo some sozinha do site,
+               não precisa mexer aqui.</p>
+            <div class="gen-order" id="gen-order"></div>
+        </section>
+
+        <section class="gen-section">
+            <h2>Slides do topo</h2>
+            <p class="gen-hint">O botão pode dar play na rádio (ação "play") ou abrir um link.</p>
+            <div id="gen-slides"></div>
+            <button type="button" class="gen-add" data-add="slides">+ Adicionar slide</button>
+        </section>
+
+        <section class="gen-section">
+            <h2>Notícias</h2>
+            <p class="gen-hint">Com "conteúdo completo" preenchido, a notícia abre num modal na própria página; sem ele, o link é usado.</p>
+            <div id="gen-news"></div>
+            <button type="button" class="gen-add" data-add="news">+ Adicionar notícia</button>
+        </section>
+
+        <section class="gen-section">
+            <h2>Vídeos (YouTube)</h2>
+            <p class="gen-hint">O código do vídeo é o trecho após "v=" na URL do YouTube (ex.: kXYiU_JCYtU).</p>
+            <div id="gen-videos"></div>
+            <button type="button" class="gen-add" data-add="videos">+ Adicionar vídeo</button>
+        </section>
+
+        <section class="gen-section">
+            <h2>Galeria de fotos</h2>
+            <p class="gen-hint">A foto grande abre no lightbox; a miniatura é opcional (use uma versão menor para a página carregar mais rápido).</p>
+            <div id="gen-gallery"></div>
+            <button type="button" class="gen-add" data-add="gallery">+ Adicionar foto</button>
+        </section>
+
+        <section class="gen-section">
+            <h2>Como nos ouvir (apps e Alexa)</h2>
+            <p class="gen-hint">Vira um card na seção "Sobre a rádio" e os badges do rodapé. Deixe em branco o que não quiser exibir.</p>
+            <div class="gen-item" id="gen-listen"></div>
+        </section>
+
+        <section class="gen-section">
+            <h2>Programação da semana</h2>
+            <div class="gen-tabs schedule-tabs" id="gen-day-tabs"></div>
+            <div id="gen-schedule"></div>
+            <button type="button" class="gen-add" data-add="schedule">+ Adicionar programa neste dia</button>
+        </section>
+
+        <section class="gen-section">
+            <h2>Equipe</h2>
+            <div id="gen-team"></div>
+            <button type="button" class="gen-add" data-add="team">+ Adicionar integrante</button>
+        </section>
+
+        <section class="gen-section">
+            <h2>Sobre a rádio (história e contato)</h2>
+            <p class="gen-hint">Aparece na home e na página Sobre. Separe os parágrafos da história com uma linha em branco; deixe em branco os contatos que não quiser exibir.</p>
+            <div class="gen-item" id="gen-about"></div>
+        </section>
+
+        <section class="gen-section">
+            <h2>Redes sociais e rodapé</h2>
+            <p class="gen-hint">Deixe em branco as redes que não quiser exibir.</p>
+            <div class="gen-item" id="gen-social"></div>
+        </section>
+
+        <div class="gen-actions">
+            <button type="button" class="gen-primary" id="gen-generate">⚙️ Gerar content.js</button>
+            <button type="button" class="gen-secondary" id="gen-copy" hidden>📋 Copiar</button>
+            <button type="button" class="gen-secondary" id="gen-download" hidden>⬇ Baixar content.js</button>
+        </div>
+
+        <section class="gen-output" id="gen-output-wrap" hidden>
+            <textarea id="gen-output" readonly spellcheck="false"></textarea>
+        </section>
+
+    </div>
+
+    <!-- o content.js é carregado no <head> (o pré-boot depende dele) -->
+    <script>
+        (function () {
+            "use strict";
+
+            const data = JSON.parse(JSON.stringify(window.siteContent || {}));
+            data.slides = data.slides || [];
+            data.news = data.news || [];
+            data.videos = data.videos || [];
+            data.gallery = data.gallery || [];
+            data.apps = data.apps || {};
+            data.listen = data.listen || {};
+            data.theme = data.theme || { accent: "#4dd7e0", accentLight: "" };
+            data.theme.style = data.theme.style || "glass";
+            // ligado é o normal: só o false explícito desliga o crescer
+            data.theme.hoverZoom = data.theme.hoverZoom !== false;
+            data.schedule = data.schedule || {};
+            data.team = data.team || [];
+            data.social = data.social || {};
+            data.footer = data.footer || { text: "" };
+            data.brand = data.brand || { name: "", logo: "" };
+            data.about = data.about || { history: "" };
+            data.about.contact = data.about.contact || {};
+
+            // --- tema (mesmo comportamento do site) ---
+            const themeToggle = document.getElementById("theme-toggle");
+            const icon = () => (document.documentElement.dataset.theme === "light" ? "🌙" : "☀️");
+            themeToggle.textContent = icon();
+            themeToggle.onclick = () => {
+                const next = document.documentElement.dataset.theme === "light" ? "dark" : "light";
+                document.documentElement.dataset.theme = next;
+                localStorage.setItem("site:theme", next);
+                themeToggle.textContent = icon();
+                previewTheme(); // a prévia da cor depende do tema atual
+            };
+
+            // --- helpers de formulário ---
+            function el(tag, className, text) {
+                const node = document.createElement(tag);
+                if (className) node.className = className;
+                if (text) node.textContent = text;
+                return node;
+            }
+
+            function field(label, value, onInput, type) {
+                const wrap = document.createElement("div");
+                wrap.className = "gen-field";
+                const lab = document.createElement("label");
+                lab.textContent = label;
+                wrap.appendChild(lab);
+                let input;
+                if (type === "textarea") {
+                    input = document.createElement("textarea");
+                    input.value = value || "";
+                } else if (type === "select-action") {
+                    input = document.createElement("select");
+                    [["play", "▶ Dar play na rádio"], ["link", "Abrir um link"]].forEach(([v, t]) => {
+                        const o = document.createElement("option");
+                        o.value = v; o.textContent = t;
+                        input.appendChild(o);
+                    });
+                    input.value = value || "link";
+                } else if (type === "color") {
+                    input = document.createElement("input");
+                    input.type = "color";
+                    input.value = value || "#4dd7e0";
+                } else {
+                    input = document.createElement("input");
+                    input.type = "text";
+                    input.value = value || "";
+                }
+                input.addEventListener("input", () => onInput(input.value));
+                if (type === "select-action") input.addEventListener("change", () => onInput(input.value));
+                wrap.appendChild(input);
+                return wrap;
+            }
+
+            function checkbox(label, checked, onChange) {
+                const wrap = document.createElement("label");
+                wrap.className = "gen-check";
+                const input = document.createElement("input");
+                input.type = "checkbox";
+                input.checked = !!checked;
+                input.addEventListener("change", () => onChange(input.checked));
+                wrap.appendChild(input);
+                wrap.appendChild(document.createTextNode(label));
+                return wrap;
+            }
+
+            function removeButton(list, index, rerender) {
+                const btn = document.createElement("button");
+                btn.type = "button";
+                btn.className = "gen-remove";
+                btn.textContent = "✕";
+                btn.title = "Remover";
+                btn.onclick = () => { list.splice(index, 1); rerender(); };
+                return btn;
+            }
+
+            function row(...children) {
+                const r = document.createElement("div");
+                r.className = "gen-row";
+                children.forEach((c) => r.appendChild(c));
+                return r;
+            }
+
+            // --- slides ---
+            function renderSlides() {
+                const root = document.getElementById("gen-slides");
+                root.innerHTML = "";
+                data.slides.forEach((slide, i) => {
+                    slide.button = slide.button || { label: "", action: "link", url: "" };
+                    const item = document.createElement("div");
+                    item.className = "gen-item";
+                    item.appendChild(removeButton(data.slides, i, renderSlides));
+                    item.appendChild(row(
+                        field("Selo (badge)", slide.badge, (v) => slide.badge = v),
+                        field("Imagem (URL, opcional)", slide.image, (v) => slide.image = v)
+                    ));
+                    item.appendChild(field("Título", slide.title, (v) => slide.title = v));
+                    item.appendChild(field("Subtítulo", slide.subtitle, (v) => slide.subtitle = v, "textarea"));
+                    item.appendChild(row(
+                        field("Texto do botão", slide.button.label, (v) => slide.button.label = v),
+                        field("Ação do botão", slide.button.action === "play" ? "play" : "link", (v) => slide.button.action = v, "select-action")
+                    ));
+                    item.appendChild(field("URL do botão (se a ação for link)", slide.button.url, (v) => slide.button.url = v));
+                    root.appendChild(item);
+                });
+            }
+
+            // --- notícias ---
+            function renderNews() {
+                const root = document.getElementById("gen-news");
+                root.innerHTML = "";
+                data.news.forEach((n, i) => {
+                    const item = document.createElement("div");
+                    item.className = "gen-item";
+                    item.appendChild(removeButton(data.news, i, renderNews));
+                    item.appendChild(field("Título", n.title, (v) => n.title = v));
+                    item.appendChild(row(
+                        field("Data (AAAA-MM-DD)", n.date, (v) => n.date = v),
+                        field("Imagem (URL)", n.image, (v) => n.image = v)
+                    ));
+                    item.appendChild(field("Resumo (aparece no card)", n.excerpt, (v) => n.excerpt = v, "textarea"));
+                    item.appendChild(field("Conteúdo completo (abre no modal; separe parágrafos com linha em branco)", n.content, (v) => n.content = v, "textarea"));
+                    item.appendChild(field("Link externo (usado só se o conteúdo estiver vazio)", n.url, (v) => n.url = v));
+                    root.appendChild(item);
+                });
+            }
+
+            // --- vídeos ---
+            function renderVideos() {
+                const root = document.getElementById("gen-videos");
+                root.innerHTML = "";
+                data.videos.forEach((v, i) => {
+                    const item = document.createElement("div");
+                    item.className = "gen-item";
+                    item.appendChild(removeButton(data.videos, i, renderVideos));
+                    item.appendChild(row(
+                        field("Código do vídeo (YouTube)", v.id, (val) => v.id = val),
+                        field("Título", v.title, (val) => v.title = val)
+                    ));
+                    root.appendChild(item);
+                });
+            }
+
+            // --- cor do site (mesma matemática do site.js, para a prévia
+            //     valer o que o site vai mostrar) ---
+            function hexToRgb(hex) {
+                const clean = String(hex || "").trim().replace(/^#/, "");
+                const full = clean.length === 3 ? clean.replace(/./g, (c) => c + c) : clean;
+                if (!/^[0-9a-f]{6}$/i.test(full)) return null;
+                const n = parseInt(full, 16);
+                return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+            }
+            const rgbToHex = ({ r, g, b }) => "#" + [r, g, b].map((v) => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, "0")).join("");
+            function luminance({ r, g, b }) {
+                const ch = (value) => { const v = value / 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
+                return 0.2126 * ch(r) + 0.7152 * ch(g) + 0.0722 * ch(b);
+            }
+            const scaleRgb = (rgb, f) => ({ r: rgb.r * f, g: rgb.g * f, b: rgb.b * f });
+
+            function previewTheme() {
+                const escuro = document.documentElement.dataset.theme !== "light";
+                const base = hexToRgb(data.theme.accent);
+                if (!base) return;
+                const claro = hexToRgb(data.theme.accentLight) || (luminance(base) > 0.45 ? scaleRgb(base, 0.7) : base);
+                const usada = escuro ? base : claro;
+                const style = document.documentElement.style;
+                style.setProperty("--site-accent", rgbToHex(usada));
+                style.setProperty("--site-accent-2", rgbToHex(scaleRgb(usada, escuro ? 0.62 : 0.75)));
+                style.setProperty("--site-accent-ink", luminance(usada) > 0.45 ? "#04252a" : "#ffffff");
+            }
+
+            function renderTheme() {
+                const root = document.getElementById("gen-theme");
+                root.innerHTML = "";
+
+                const auto = !data.theme.accentLight;
+                root.appendChild(field("Cor de destaque", data.theme.accent || "#4dd7e0", (v) => {
+                    data.theme.accent = v;
+                    previewTheme();
+                }, "color"));
+
+                root.appendChild(checkbox("Ajustar a cor automaticamente no tema claro (recomendado)", auto, (marcado) => {
+                    data.theme.accentLight = marcado ? "" : (data.theme.accent || "#4dd7e0");
+                    renderTheme();
+                    previewTheme();
+                }));
+
+                if (!auto) {
+                    root.appendChild(field("Cor de destaque no tema claro", data.theme.accentLight, (v) => {
+                        data.theme.accentLight = v;
+                        previewTheme();
+                    }, "color"));
+                }
+
+                const previa = document.createElement("div");
+                previa.className = "gen-swatches";
+                const cheio = document.createElement("span");
+                cheio.className = "gen-swatch";
+                cheio.textContent = "Ouvir agora";
+                const vazado = document.createElement("span");
+                vazado.className = "gen-swatch-alt";
+                vazado.textContent = "Ler mais →";
+                previa.appendChild(cheio);
+                previa.appendChild(vazado);
+                root.appendChild(previa);
+
+                previewTheme();
+            }
+
+            // --- estilo visual ---
+            // A miniatura é desenhada com os MESMOS tokens (--ui-*) do site e
+            // do dock de verdade: basta o data-ui no wrapper para ela se
+            // pintar sozinha. Nenhum valor de cor/sombra é copiado aqui, então
+            // mexer no css/ui-styles.css atualiza a prévia junto.
+
+            const STYLES = [
+                ["glass", "Glassmorphism", "Vidro fosco: o fundo aparece desfocado atrás das superfícies. É o visual original do projeto."],
+                ["clay", "Claymorphism", "Massa opaca e fofa: cantos bem redondos, relevo e nenhuma borda. Sem transparência."],
+                ["minimal", "Minimalismo", "Plano e sóbrio: fio de 1px, zero sombra e a cor de destaque só onde ela é informação."],
+                ["liquid", "Liquid Glass", "Vidro espesso: borda especular, cantos em cápsula e um reflexo que atravessa o dock tocando."],
+                ["spatial", "Spatial UI", "Objetos flutuando: sombras amplas, profundidade e elevação ao passar o mouse."],
+            ];
+
+            const previewMarkup =
+                '<div class="style-preview-card"><i></i><i></i><i></i></div>' +
+                '<div class="style-preview-dock">' +
+                    '<span class="style-preview-art"></span>' +
+                    '<span class="style-preview-lines"><i></i><i></i></span>' +
+                    '<span class="style-preview-btn"></span>' +
+                    '<span class="style-preview-play">&#9654;</span>' +
+                '</div>';
+
+            function renderStyle() {
+                const root = document.getElementById("gen-style");
+                root.innerHTML = "";
+                const atual = data.theme.style || "glass";
+
+                STYLES.forEach(([key, nome, descricao]) => {
+                    const btn = document.createElement("button");
+                    btn.type = "button";
+                    btn.className = "style-option" + (key === atual ? " is-active" : "");
+                    btn.setAttribute("aria-pressed", key === atual ? "true" : "false");
+
+                    const previa = document.createElement("div");
+                    previa.className = "style-preview";
+                    previa.dataset.ui = key;
+                    previa.innerHTML = previewMarkup;
+
+                    const corpo = document.createElement("div");
+                    corpo.className = "style-option-body";
+                    const titulo = document.createElement("div");
+                    titulo.className = "style-option-name";
+                    titulo.appendChild(document.createTextNode(nome));
+                    titulo.appendChild(el("span", "style-option-check"));
+                    corpo.appendChild(titulo);
+                    corpo.appendChild(el("div", "style-option-desc", descricao));
+
+                    btn.appendChild(previa);
+                    btn.appendChild(corpo);
+                    btn.onclick = () => {
+                        data.theme.style = key;
+                        document.documentElement.dataset.ui = key;
+                        renderStyle();
+                    };
+                    root.appendChild(btn);
+                });
+            }
+
+            // --- zoom no hover ---
+            // Anda junto do estilo porque é dele que o efeito vem: liquid e
+            // spatial fazem o cartão crescer, os outros três não. Só a foto da
+            // galeria e a miniatura de vídeo dão zoom em qualquer estilo — daí
+            // o campo existir mesmo para quem escolheu o minimal.
+            function renderHoverZoom() {
+                const root = document.getElementById("gen-hover-zoom");
+                root.innerHTML = "";
+                root.appendChild(checkbox(
+                    "Crescer ao passar o mouse (cartões, fotos e botões)",
+                    data.theme.hoverZoom,
+                    (marcado) => {
+                        data.theme.hoverZoom = marcado;
+                        aplicarHoverZoom();
+                    }
+                ));
+                const dica = el("p", "gen-hint",
+                    "Desmarque para tirar só o crescer: o levantar, a borda que acende e a " +
+                    "sombra continuam, então o cartão segue respondendo ao mouse.");
+                root.appendChild(dica);
+                aplicarHoverZoom();
+            }
+
+            // --- efeitos do player ---
+            // Moram no theme junto com o estilo porque são a mesma decisão de
+            // aparência. O radioplayer.js lê primeiro o config.js e só cai
+            // aqui quando aquele não disser nada — daí o padrão ser ligado.
+
+            function renderPlayerFx() {
+                const root = document.getElementById("gen-player-fx");
+                root.innerHTML = "";
+                root.appendChild(checkbox(
+                    "Bargraph atrás do player (as barras que dançam com o áudio)",
+                    data.theme.visualizer !== false,
+                    (marcado) => { data.theme.visualizer = marcado; }
+                ));
+                const campo = el("div", "gen-field");
+                const rotulo = document.createElement("label");
+                rotulo.textContent = "Barra de progresso da faixa";
+                campo.appendChild(rotulo);
+                const escolha = document.createElement("select");
+                [
+                    ["wave", "Com onda balançando na crista"],
+                    ["simple", "Simples — só o traço"],
+                    ["off", "Desligada"],
+                ].forEach(([valor, texto]) => {
+                    const opcao = document.createElement("option");
+                    opcao.value = valor;
+                    opcao.textContent = texto;
+                    escolha.appendChild(opcao);
+                });
+                escolha.value = data.theme.progress === false ? "off"
+                    : data.theme.progress === "simple" ? "simple" : "wave";
+                escolha.onchange = () => {
+                    data.theme.progress = escolha.value === "off" ? false : escolha.value;
+                };
+                campo.appendChild(escolha);
+                root.appendChild(campo);
+
+                root.appendChild(el("p", "gen-hint",
+                    "Com o bargraph ligado, a opção simples combina melhor: a onda e as barras " +
+                    "disputam a mesma faixa na base do dock. E a barra toda depende da API entregar " +
+                    "o tempo da música — em stream ao vivo puro ela não aparece de jeito nenhum."));
+            }
+
+            function aplicarHoverZoom() {
+                if (data.theme.hoverZoom) delete document.documentElement.dataset.hoverZoom;
+                else document.documentElement.dataset.hoverZoom = "off";
+            }
+
+            // --- ordem das seções ---
+            // A lista gerada aqui é lida pelo site.js, que reordena os blocos
+            // da home e os links do menu. O topo (slides) e o rodapé não
+            // entram: ficam sempre nas pontas.
+
+            const SECTION_NAMES = [
+                ["noticias", "Notícias"],
+                ["videos", "Vídeos"],
+                ["galeria", "Galeria de fotos"],
+                ["programacao", "Programação da semana"],
+                ["equipe", "Equipe"],
+                ["contato", "Sobre a rádio / contato"],
+            ];
+
+            // mesma regra do site.js: sem repetidos nem nomes desconhecidos, e
+            // o que faltar entra no fim — um content.js antigo (sem order) ou
+            // com a lista pela metade continua abrindo com todas as seções
+            function normalizeOrder(list) {
+                const out = (Array.isArray(list) ? list : [])
+                    .filter((id, i, l) => l.indexOf(id) === i && SECTION_NAMES.some(([key]) => key === id));
+                SECTION_NAMES.forEach(([key]) => { if (!out.includes(key)) out.push(key); });
+                return out;
+            }
+
+            data.order = normalizeOrder(data.order);
+
+            function moveButton(index, delta, label, title) {
+                const btn = document.createElement("button");
+                btn.type = "button";
+                btn.className = "gen-order-move";
+                btn.textContent = label;
+                btn.title = title;
+                btn.disabled = index + delta < 0 || index + delta >= data.order.length;
+                btn.onclick = () => {
+                    const target = index + delta;
+                    const moved = data.order[index];
+                    data.order[index] = data.order[target];
+                    data.order[target] = moved;
+                    renderOrder();
+                };
+                return btn;
+            }
+
+            function renderOrder() {
+                const root = document.getElementById("gen-order");
+                root.innerHTML = "";
+                data.order.forEach((id, i) => {
+                    const entry = SECTION_NAMES.find(([key]) => key === id);
+                    const item = el("div", "gen-order-item");
+                    item.appendChild(el("span", "gen-order-pos", (i + 1) + "º"));
+                    item.appendChild(el("span", "gen-order-name", entry ? entry[1] : id));
+                    item.appendChild(moveButton(i, -1, "↑", "Subir"));
+                    item.appendChild(moveButton(i, 1, "↓", "Descer"));
+                    root.appendChild(item);
+                });
+            }
+
+            // --- galeria ---
+            function renderGallery() {
+                const root = document.getElementById("gen-gallery");
+                root.innerHTML = "";
+                data.gallery.forEach((photo, i) => {
+                    const item = document.createElement("div");
+                    item.className = "gen-item";
+                    item.appendChild(removeButton(data.gallery, i, renderGallery));
+                    item.appendChild(row(
+                        field("Foto (URL)", photo.image, (v) => photo.image = v),
+                        field("Miniatura (URL, opcional)", photo.thumb, (v) => photo.thumb = v)
+                    ));
+                    item.appendChild(field("Legenda", photo.caption, (v) => photo.caption = v));
+                    root.appendChild(item);
+                });
+            }
+
+            // --- como nos ouvir (apps + Alexa) ---
+            function renderListen() {
+                const root = document.getElementById("gen-listen");
+                root.innerHTML = "";
+                root.appendChild(row(
+                    field("App Android (link da Play Store)", data.apps.android, (v) => data.apps.android = v),
+                    field("App iOS (link da App Store)", data.apps.ios, (v) => data.apps.ios = v)
+                ));
+                root.appendChild(row(
+                    field("Título do card", data.listen.title, (v) => data.listen.title = v),
+                    field("Skill da Alexa (link na Amazon, opcional)", data.apps.alexa, (v) => data.apps.alexa = v)
+                ));
+                root.appendChild(field("Texto do card", data.listen.text, (v) => data.listen.text = v, "textarea"));
+                root.appendChild(field('Frase da Alexa (ex.: "Alexa, tocar Minha Rádio")', data.listen.alexaPhrase, (v) => data.listen.alexaPhrase = v));
+            }
+
+            // --- programação ---
+            const DAYS = [["seg", "Segunda"], ["ter", "Terça"], ["qua", "Quarta"], ["qui", "Quinta"], ["sex", "Sexta"], ["sab", "Sábado"], ["dom", "Domingo"]];
+            let currentDay = "seg";
+
+            function renderDayTabs() {
+                const tabs = document.getElementById("gen-day-tabs");
+                tabs.innerHTML = "";
+                DAYS.forEach(([key, label]) => {
+                    const b = document.createElement("button");
+                    b.type = "button";
+                    b.className = "schedule-tab" + (key === currentDay ? " is-active" : "");
+                    b.textContent = label;
+                    b.onclick = () => { currentDay = key; renderDayTabs(); renderSchedule(); };
+                    tabs.appendChild(b);
+                });
+            }
+
+            function renderSchedule() {
+                const root = document.getElementById("gen-schedule");
+                root.innerHTML = "";
+                data.schedule[currentDay] = data.schedule[currentDay] || [];
+                data.schedule[currentDay].forEach((slot, i) => {
+                    const item = document.createElement("div");
+                    item.className = "gen-item";
+                    item.appendChild(removeButton(data.schedule[currentDay], i, renderSchedule));
+                    item.appendChild(row(
+                        field("Horário (HH:MM)", slot.time, (v) => slot.time = v),
+                        field("Programa", slot.name, (v) => slot.name = v)
+                    ));
+                    item.appendChild(field("Locutor / descrição", slot.host, (v) => slot.host = v));
+                    root.appendChild(item);
+                });
+            }
+
+            // --- equipe ---
+            function renderTeam() {
+                const root = document.getElementById("gen-team");
+                root.innerHTML = "";
+                data.team.forEach((m, i) => {
+                    const item = document.createElement("div");
+                    item.className = "gen-item";
+                    item.appendChild(removeButton(data.team, i, renderTeam));
+                    item.appendChild(row(
+                        field("Nome", m.name, (v) => m.name = v),
+                        field("Função", m.role, (v) => m.role = v)
+                    ));
+                    item.appendChild(field("Foto (URL)", m.photo, (v) => m.photo = v));
+                    root.appendChild(item);
+                });
+            }
+
+            // --- sobre a rádio (história + contato) ---
+            function renderAbout() {
+                const root = document.getElementById("gen-about");
+                root.innerHTML = "";
+                root.appendChild(field("História da rádio", data.about.history, (v) => data.about.history = v, "textarea"));
+                root.appendChild(row(
+                    field("Endereço", data.about.contact.address, (v) => data.about.contact.address = v),
+                    field("Telefone", data.about.contact.phone, (v) => data.about.contact.phone = v)
+                ));
+                root.appendChild(row(
+                    field("WhatsApp (link wa.me)", data.about.contact.whatsapp, (v) => data.about.contact.whatsapp = v),
+                    field("E-mail", data.about.contact.email, (v) => data.about.contact.email = v)
+                ));
+                // a cidade alimenta DOIS lugares: o chip de clima no topo e o
+                // mapa da seção Sobre — em branco, os dois somem
+                root.appendChild(field("Cidade (chip de clima no topo + mapa) — em branco, ocultam", data.about.city, (v) => data.about.city = v));
+                data.about.donation = data.about.donation || { url: "", label: "" };
+                root.appendChild(row(
+                    field("Link de doação (Pix, PayPal, Ko-fi…) — em branco, oculta o botão", data.about.donation.url, (v) => data.about.donation.url = v),
+                    field("Texto do botão de doação", data.about.donation.label, (v) => data.about.donation.label = v)
+                ));
+            }
+
+            // --- social + rodapé ---
+            function renderSocial() {
+                const root = document.getElementById("gen-social");
+                root.innerHTML = "";
+                root.appendChild(row(
+                    field("Nome da rádio (header)", data.brand.name, (v) => data.brand.name = v),
+                    field("Logo do header (URL — substitui o texto)", data.brand.logo, (v) => data.brand.logo = v)
+                ));
+                ["whatsapp", "instagram", "facebook", "twitter", "youtube", "tiktok", "telegram"].forEach((key) => {
+                    root.appendChild(field(key, data.social[key], (v) => data.social[key] = v));
+                });
+                root.appendChild(field("Texto do rodapé", data.footer.text, (v) => data.footer.text = v));
+            }
+
+            // --- botões de adicionar ---
+            document.querySelectorAll("[data-add]").forEach((btn) => {
+                btn.onclick = () => {
+                    const kind = btn.dataset.add;
+                    if (kind === "slides") { data.slides.push({ badge: "", title: "", subtitle: "", image: "", button: { label: "", action: "link", url: "" } }); renderSlides(); }
+                    if (kind === "news") { data.news.push({ title: "", date: "", image: "", excerpt: "", content: "", url: "" }); renderNews(); }
+                    if (kind === "videos") { data.videos.push({ id: "", title: "" }); renderVideos(); }
+                    if (kind === "gallery") { data.gallery.push({ image: "", thumb: "", caption: "" }); renderGallery(); }
+                    if (kind === "schedule") { data.schedule[currentDay] = data.schedule[currentDay] || []; data.schedule[currentDay].push({ time: "", name: "", host: "" }); renderSchedule(); }
+                    if (kind === "team") { data.team.push({ name: "", role: "", photo: "" }); renderTeam(); }
+                };
+            });
+
+            // --- geração do arquivo ---
+            function cleanData() {
+                const out = JSON.parse(JSON.stringify(data));
+                out.slides = out.slides.filter((s) => s.title);
+                out.slides.forEach((s) => {
+                    if (s.button && !s.button.label) delete s.button;
+                    else if (s.button && s.button.action === "play") delete s.button.url;
+                    else if (s.button) delete s.button.action;
+                    if (!s.image) delete s.image;
+                });
+                out.news = out.news.filter((n) => n.title);
+                out.news.forEach((n) => { if (!n.content) delete n.content; if (!n.url) delete n.url; });
+                out.videos = out.videos.filter((v) => v.id);
+                out.team = out.team.filter((m) => m.name);
+                out.gallery = out.gallery.filter((p) => p.image);
+                out.gallery.forEach((p) => { if (!p.thumb) delete p.thumb; if (!p.caption) delete p.caption; });
+                if (!out.gallery.length) delete out.gallery;
+                Object.keys(out.apps).forEach((k) => { if (!out.apps[k]) delete out.apps[k]; });
+                if (!Object.keys(out.apps).length) delete out.apps;
+                Object.keys(out.listen).forEach((k) => { if (!out.listen[k]) delete out.listen[k]; });
+                if (!Object.keys(out.listen).length) delete out.listen;
+                if (!out.theme.accentLight) delete out.theme.accentLight;
+                if (!out.theme.accent) delete out.theme.accent;
+                // "glass" é o padrão do site: gravar o campo só ruído no arquivo
+                if (!out.theme.style || out.theme.style === "glass") delete out.theme.style;
+                // idem para o zoom ligado — só a recusa precisa ir para o arquivo
+                if (out.theme.hoverZoom !== false) delete out.theme.hoverZoom;
+                // e para os efeitos do player, ligados por padrão
+                if (out.theme.visualizer !== false) delete out.theme.visualizer;
+                // a onda é o padrão do player: só "simple" e false vão ao arquivo
+                if (out.theme.progress === undefined || out.theme.progress === true
+                    || out.theme.progress === "wave") delete out.theme.progress;
+                if (!Object.keys(out.theme).length) delete out.theme;
+                Object.keys(out.schedule).forEach((day) => {
+                    out.schedule[day] = (out.schedule[day] || []).filter((s) => s.time && s.name);
+                    if (!out.schedule[day].length) delete out.schedule[day];
+                });
+                Object.keys(out.social).forEach((k) => { if (!out.social[k]) delete out.social[k]; });
+                Object.keys(out.about.contact).forEach((k) => { if (!out.about.contact[k]) delete out.about.contact[k]; });
+                if (!Object.keys(out.about.contact).length) delete out.about.contact;
+                if (out.about.donation && !out.about.donation.url) delete out.about.donation;
+                if (!out.about.city) delete out.about.city;
+                if (!out.about.history) delete out.about.history;
+                if (!Object.keys(out.about).length) delete out.about;
+                return out;
+            }
+
+            const output = document.getElementById("gen-output");
+            const outputWrap = document.getElementById("gen-output-wrap");
+            const copyBtn = document.getElementById("gen-copy");
+            const downloadBtn = document.getElementById("gen-download");
+
+            document.getElementById("gen-generate").onclick = () => {
+                const header = "/* Gerado pelo gerador.html em " + new Date().toLocaleString("pt-BR") + " */\n";
+                output.value = header + "window.siteContent = " + JSON.stringify(cleanData(), null, 4) + ";\n";
+                outputWrap.hidden = false;
+                copyBtn.hidden = false;
+                downloadBtn.hidden = false;
+                output.scrollIntoView({ behavior: "smooth", block: "nearest" });
+            };
+
+            copyBtn.onclick = async () => {
+                try {
+                    await navigator.clipboard.writeText(output.value);
+                    copyBtn.textContent = "✅ Copiado!";
+                } catch (e) {
+                    output.select();
+                    document.execCommand("copy");
+                    copyBtn.textContent = "✅ Copiado!";
+                }
+                setTimeout(() => (copyBtn.textContent = "📋 Copiar"), 2000);
+            };
+
+            downloadBtn.onclick = () => {
+                const blob = new Blob([output.value], { type: "text/javascript;charset=utf-8" });
+                const a = document.createElement("a");
+                a.href = URL.createObjectURL(blob);
+                a.download = "content.js";
+                a.click();
+                URL.revokeObjectURL(a.href);
+            };
+
+            // --- primeira renderização ---
+            renderStyle();
+            renderHoverZoom();
+            renderPlayerFx();
+            renderTheme();
+            renderOrder();
+            renderSlides();
+            renderNews();
+            renderVideos();
+            renderGallery();
+            renderListen();
+            renderDayTabs();
+            renderSchedule();
+            renderTeam();
+            renderAbout();
+            renderSocial();
+        })();
+    </script>
+</body>
+
+</html>

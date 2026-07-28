@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Player de Rádio para Rodapé do Site — O Áudio Não Para ao Navegar | Radio Player Component</title>
+    <meta name="description" content="Componente de player de rádio fixo no rodapé: o áudio NUNCA para enquanto o visitante navega pelo site (navegação seamless). Now playing com capa, histórico, letra, clipe do YouTube e site demo completo com notícias, vídeos e programação.">
+    <meta name="keywords" content="player de rádio rodapé, radio player footer, rádio que não para ao navegar, radio player component, html5 radio player, icecast, shoutcast, zeno fm">
+    <link rel="canonical" href="https://jailsonsb2.github.io/bottom_radioplayer/">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Player de Rádio para Rodapé — O Áudio Não Para ao Navegar">
+    <meta property="og:description" content="Componente embutível: duas linhas de código e a rádio toca sem interrupção em todas as páginas do site.">
+    <meta property="og:url" content="https://jailsonsb2.github.io/bottom_radioplayer/">
+    <meta property="og:image" content="https://jailsonsb2.github.io/bottom_radioplayer/assets/jailson_cover.png">
+    <meta name="twitter:card" content="summary_large_image">
+
+    <!-- PWA: o site pode ser instalado como aplicativo (veja pwa.js e sw.js) -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0b0e13">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Minha Rádio">
+    <link rel="icon" href="assets/favicon.png">
+    <link rel="apple-touch-icon" href="assets/pwa/icon-192.png">
+
+    <!-- Conteúdo do site (edite o content.js). Vem no <head> porque o
+         pré-boot abaixo lê dele o ESTILO VISUAL — aplicá-lo só no fim da
+         página faria o vidro piscar antes do estilo escolhido. -->
+    <script src="content.js"></script>
+    <!-- Idiomas do site (pt/en/es/it). Fora daqui, tudo segue em português. -->
+    <script src="js/i18n.js"></script>
+    <script>
+        // Aplica o tema salvo e o estilo visual antes do primeiro paint
+        (function () {
+            var theme = localStorage.getItem("site:theme");
+            if (!theme) theme = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+            document.documentElement.dataset.theme = theme;
+
+            // glass (padrão) | clay | minimal | liquid | spatial
+            var content = window.siteContent || {};
+            // O modo dev (?dev=1, veja o site.js) troca o estilo só nesta
+            // máquina. Precisa ser lido aqui, antes do primeiro paint, ou o
+            // visual escolhido piscaria de volta ao do content a cada página.
+            var uiDev = localStorage.getItem("site:dev") === "1" ? localStorage.getItem("site:ui") : null;
+            document.documentElement.dataset.ui = uiDev || (content.theme || {}).style || "glass";
+
+            // theme.hoverZoom: false desliga o crescer ao passar o mouse
+            if ((content.theme || {}).hoverZoom === false) {
+                document.documentElement.dataset.hoverZoom = "off";
+            }
+        })();
+    </script>
+    <link rel="stylesheet" href="site.css">
+    <!-- Estilos visuais alternativos (só agem se houver data-ui no <html>) -->
+    <link rel="stylesheet" href="css/ui-styles.css">
+</head>
+
+<body>
+    <header class="site-header">
+        <div class="site-header-inner">
+            <a class="site-brand" href="index.html"><span class="site-brand-name">Minha Rádio</span></a>
+            <nav class="site-nav">
+                <a href="#noticias" data-i18n="nav.news">Notícias</a>
+                <a href="#videos" data-i18n="nav.videos">Vídeos</a>
+                <a href="#galeria" data-i18n="nav.gallery">Galeria</a>
+                <a href="#programacao" data-i18n="nav.schedule">Programação</a>
+                <a href="#equipe" data-i18n="nav.team">Equipe</a>
+                <a href="#contato" data-i18n="nav.contact">Contato</a>
+                <a href="pagina2.html" data-i18n="nav.about">Sobre</a>
+            </nav>
+            <button type="button" id="theme-toggle" class="theme-toggle" aria-label="Alternar tema claro/escuro" data-i18n-aria-label="a11y.theme"></button>
+            <button type="button" id="nav-toggle" class="nav-toggle" aria-label="Abrir menu" data-i18n-aria-label="a11y.menuOpen" aria-expanded="false">
+                <svg viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"></path></svg>
+            </button>
+        </div>
+    </header>
+
+    <div class="site-container">
+
+        <section class="hero-slider" id="site-hero"></section>
+
+        <section class="site-section" id="noticias">
+            <h2 class="site-section-title" data-i18n="section.news">Últimas notícias</h2>
+            <div class="news-grid" id="site-news"></div>
+        </section>
+
+        <section class="site-section" id="videos">
+            <h2 class="site-section-title" data-i18n="section.videos">Vídeos em destaque</h2>
+            <div class="videos-grid" id="site-videos"></div>
+        </section>
+
+        <section class="site-section" id="galeria">
+            <h2 class="site-section-title" data-i18n="section.gallery">Galeria de fotos</h2>
+            <div class="gallery-grid" id="site-gallery"></div>
+        </section>
+
+        <section class="site-section" id="programacao">
+            <h2 class="site-section-title" data-i18n="section.schedule">Programação da semana</h2>
+            <div id="site-schedule"></div>
+        </section>
+
+        <section class="site-section" id="equipe">
+            <h2 class="site-section-title" data-i18n="section.team">Nossa equipe</h2>
+            <div class="team-grid" id="site-team"></div>
+        </section>
+
+        <section class="site-section" id="contato">
+            <h2 class="site-section-title" data-i18n="section.about">Sobre a rádio</h2>
+            <div class="about-grid" id="site-about"></div>
+        </section>
+
+        <footer class="site-footer">
+            <span id="site-footer-text"></span>
+            <div id="site-social" class="footer-social"></div>
+            <span><a href="pagina2.html" data-i18n="footer.about">Sobre a rádio</a></span>
+        </footer>
+
+    </div>
+
+    <!-- o content.js é carregado no <head> (o pré-boot depende dele) -->
+    <script src="site.js"></script>
+
+    <!-- PWA (opcional): registra o service worker e o botão "Instalar app" -->
+    <script src="pwa.js"></script>
+
+    <!-- RadioPlayer: só estas duas linhas em cada página do site -->
+    <script src="config.js"></script>
+    <script src="js/radioplayer.js"></script>
+</body>
+
+</html>

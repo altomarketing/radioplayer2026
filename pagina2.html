@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Minha Rádio — Sobre</title>
+
+    <!-- PWA: o site pode ser instalado como aplicativo (veja pwa.js e sw.js) -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0b0e13">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Minha Rádio">
+    <link rel="icon" href="assets/favicon.png">
+    <link rel="apple-touch-icon" href="assets/pwa/icon-192.png">
+
+    <!-- Conteúdo do site (edite o content.js). Vem no <head> porque o
+         pré-boot abaixo lê dele o ESTILO VISUAL — aplicá-lo só no fim da
+         página faria o vidro piscar antes do estilo escolhido. -->
+    <script src="content.js"></script>
+    <!-- Idiomas do site (pt/en/es/it). Fora daqui, tudo segue em português. -->
+    <script src="js/i18n.js"></script>
+    <script>
+        // Aplica o tema salvo e o estilo visual antes do primeiro paint
+        (function () {
+            var theme = localStorage.getItem("site:theme");
+            if (!theme) theme = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+            document.documentElement.dataset.theme = theme;
+
+            // glass (padrão) | clay | minimal | liquid | spatial
+            var content = window.siteContent || {};
+            // O modo dev (?dev=1, veja o site.js) troca o estilo só nesta
+            // máquina. Precisa ser lido aqui, antes do primeiro paint, ou o
+            // visual escolhido piscaria de volta ao do content a cada página.
+            var uiDev = localStorage.getItem("site:dev") === "1" ? localStorage.getItem("site:ui") : null;
+            document.documentElement.dataset.ui = uiDev || (content.theme || {}).style || "glass";
+
+            // theme.hoverZoom: false desliga o crescer ao passar o mouse
+            if ((content.theme || {}).hoverZoom === false) {
+                document.documentElement.dataset.hoverZoom = "off";
+            }
+        })();
+    </script>
+    <link rel="stylesheet" href="site.css">
+    <!-- Estilos visuais alternativos (só agem se houver data-ui no <html>) -->
+    <link rel="stylesheet" href="css/ui-styles.css">
+</head>
+
+<body>
+    <header class="site-header">
+        <div class="site-header-inner">
+            <a class="site-brand" href="index.html"><span class="site-brand-name">Minha Rádio</span></a>
+            <nav class="site-nav">
+                <a href="index.html#noticias" data-i18n="nav.news">Notícias</a>
+                <a href="index.html#videos" data-i18n="nav.videos">Vídeos</a>
+                <a href="index.html#galeria" data-i18n="nav.gallery">Galeria</a>
+                <a href="index.html#programacao" data-i18n="nav.schedule">Programação</a>
+                <a href="index.html#equipe" data-i18n="nav.team">Equipe</a>
+                <a href="index.html#contato" data-i18n="nav.contact">Contato</a>
+                <a href="pagina2.html" data-i18n="nav.about">Sobre</a>
+            </nav>
+            <button type="button" id="theme-toggle" class="theme-toggle" aria-label="Alternar tema claro/escuro" data-i18n-aria-label="a11y.theme"></button>
+            <button type="button" id="nav-toggle" class="nav-toggle" aria-label="Abrir menu" data-i18n-aria-label="a11y.menuOpen" aria-expanded="false">
+                <svg viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"></path></svg>
+            </button>
+        </div>
+    </header>
+
+    <div class="site-container">
+
+        <section class="hero">
+            <span class="hero-badge"><span class="site-brand-dot"></span> <span data-i18n="page.about.badge">Sobre nós</span></span>
+            <h1 data-i18n="page.about.heading">Uma rádio que não para 🎶</h1>
+            <p data-i18n="page.about.text">
+                Você navegou para outra página e a música continuou tocando — o player é um
+                componente que intercepta a navegação interna e troca só o conteúdo da página,
+                mantendo o áudio vivo.
+            </p>
+        </section>
+
+        <section class="site-section" id="contato">
+            <h2 class="site-section-title" data-i18n="section.history">Nossa história</h2>
+            <div class="about-grid" id="site-about"></div>
+        </section>
+
+        <footer class="site-footer">
+            <span id="site-footer-text"></span>
+            <div id="site-social" class="footer-social"></div>
+            <span><a href="index.html" data-i18n="footer.home">Voltar ao início</a></span>
+        </footer>
+
+    </div>
+
+    <!-- o content.js é carregado no <head> (o pré-boot depende dele) -->
+    <script src="site.js"></script>
+
+    <!-- PWA (opcional): registra o service worker e o botão "Instalar app" -->
+    <script src="pwa.js"></script>
+
+    <!-- RadioPlayer: só estas duas linhas em cada página do site -->
+    <script src="config.js"></script>
+    <script src="js/radioplayer.js"></script>
+</body>
+
+</html>
