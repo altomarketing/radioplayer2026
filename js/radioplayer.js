@@ -28,6 +28,12 @@
   const SCRIPT_SRC = (document.currentScript && document.currentScript.src) || "js/radioplayer.js";
   const BASE = SCRIPT_SRC.replace(/js\/[^/]*(\?.*)?$/, "");
 
+  function resolveAssetUrl(url) {
+      if (!url) return url;
+      if (/^(https?:)?\/\/|^data:/i.test(url)) return url;
+      return new URL(url, BASE || location.href).href;
+  }
+
   const CONFIG = window.streams || {};
   const SEAMLESS = CONFIG.seamless !== false;
   const LYRICS_ENABLED = CONFIG.lyrics !== false;
@@ -454,7 +460,8 @@
           return new Promise((resolve, reject) => {
               const img = document.createElement("img");
               img.crossOrigin = "Anonymous";
-              img.src = `https://images.weserv.nl/?url=${src}`;
+              const resolvedSrc = resolveAssetUrl(src);
+              img.src = `https://images.weserv.nl/?url=${encodeURIComponent(resolvedSrc)}`;
               img.onload = () => resolve(img);
               img.onerror = reject;
           });
@@ -1324,8 +1331,8 @@
           lastYoutubeId = "";
           lastLyricsKey = "";
 
-          playerArtwork && (playerArtwork.src = station.album);
-          playerCoverImg && (playerCoverImg.src = station.cover || station.album);
+          playerArtwork && (playerArtwork.src = resolveAssetUrl(station.album));
+          playerCoverImg && (playerCoverImg.src = resolveAssetUrl(station.cover || station.album));
           stationName.textContent = station.name;
           stationDescription.textContent = station.description;
           metaStation && (metaStation.textContent = station.name);
@@ -1340,17 +1347,17 @@
 
           const modalImage = root.querySelector(".player-modal-image");
           if (modalImage) {
-              modalImage.src = station.album;
+              modalImage.src = resolveAssetUrl(station.album);
           }
 
           const stationLogo = root.querySelector(".player-station img");
           if (stationLogo) {
-              stationLogo.src = station.album;
+              stationLogo.src = resolveAssetUrl(station.album);
           }
 
           root.querySelectorAll(".modal-social a").forEach((link) => {
               link.dataset.radioName = station.name;
-              link.dataset.radioLogo = station.logo;
+              link.dataset.radioLogo = resolveAssetUrl(station.logo);
               link.dataset.radioUrl = window.location.href;
           });
 
@@ -1546,11 +1553,19 @@
       // --- [INICIALIZAÇÃO] ---------------------------------------------
 
       const json = CONFIG;
-      const stations = json.stations || [];
-      if (!stations.length) {
+      const rawStations = json.stations || [];
+      if (!rawStations.length) {
           console.error("RadioPlayer: nenhuma estação configurada em window.streams.stations");
           return;
       }
+
+      // Normaliza URLs de imágenes para funcionarem em domínios remotos
+      const stations = rawStations.map((s) => ({
+          ...s,
+          logo: resolveAssetUrl(s.logo),
+          album: resolveAssetUrl(s.album),
+          cover: resolveAssetUrl(s.cover),
+      }));
 
       // Restaura a estação persistida (se ainda existir na config)
       const savedHash = localStorage.getItem("radioplayer:station");
